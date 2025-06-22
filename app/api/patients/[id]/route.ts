@@ -1,15 +1,16 @@
 import { Patient } from '@/models/Patient';
 import { connectToDatabase } from '@/utils/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export const GET = async (
-  req: Request,
+export async function GET(
+  req: NextRequest,
   context: { params: { id: string } }
-): Promise<Response> => {
+) {
   try {
     await connectToDatabase();
 
-    const patient = await Patient.findById(context.params.id);
+    const patientId = context.params.id;
+    const patient = await Patient.findById(patientId);
 
     if (!patient) {
       return NextResponse.json({ message: 'Patient not found' }, { status: 404 });
@@ -26,4 +27,4 @@ export const GET = async (
       { status: 500 }
     );
   }
-};
+}

@@ -4,12 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     await connectToDatabase();
 
-    const patientId = context.params.id;
+    const patientId = params.id;
     const patient = await Patient.findById(patientId);
 
     if (!patient) {

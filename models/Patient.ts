@@ -1,4 +1,5 @@
-import { Schema, model, models, Model, Types, Document } from 'mongoose';
+import mongoose, { Schema, model, models, Model, Types, Document } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // --- Interfaces ---
 export interface IVitalSigns {
@@ -21,8 +22,10 @@ export interface IMedication {
 
 export interface IPatient {
   _id: string;
+  patientId?: string;
   name: string;
   age: number;
+  dateOfBirth?: Date;
   gender: 'Male' | 'Female' | 'Other';
   phone: string;
   email: string;
@@ -37,7 +40,16 @@ export interface IPatient {
   vitalSigns: IVitalSigns;
   medicalHistory: IMedicalHistoryEntry[];
   medications: IMedication[];
-  doctor: Types.ObjectId;
+  doctor?: Types.ObjectId;
+  assignedDoctor?: Types.ObjectId;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  existingConditions?: string[];
+  symptoms?: string;
+  password?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -63,8 +75,10 @@ const medicationSchema = new Schema<IMedication>({
 
 const patientSchema = new Schema<IPatient>(
   {
+    patientId: { type: String, unique: true, sparse: true },
     name: { type: String, required: true },
     age: { type: Number, required: true },
+    dateOfBirth: { type: Date },
     gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
     phone: { type: String, required: true },
     email: { type: String, required: true },
@@ -79,10 +93,37 @@ const patientSchema = new Schema<IPatient>(
     vitalSigns: { type: vitalSignsSchema, required: true },
     medicalHistory: { type: [medicalHistoryEntrySchema], required: true },
     medications: { type: [medicationSchema], required: true },
-    doctor: { type: Schema.Types.ObjectId, ref: 'Doctor', required: true },
+    doctor: { type: Schema.Types.ObjectId, ref: 'Doctor' },
+    assignedDoctor: { type: Schema.Types.ObjectId, ref: 'Doctor', default: null },
+    emergencyContact: {
+      name: { type: String },
+      phone: { type: String },
+      relationship: { type: String },
+    },
+    existingConditions: { type: [String], default: [] },
+    symptoms: { type: String, default: '' },
+    password: { type: String, select: false },
   },
   { timestamps: true }
 );
+
+patientSchema.pre('save', async function () {
+  if (this.isModified('password') && this.password) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+
+  if (this.isNew && !this.patientId) {
+    const lastPatient = await mongoose.model<IPatient>('Patient')
+      .findOne({ patientId: /^PAT-/ })
+      .sort({ patientId: -1 })
+      .select('patientId')
+      .lean();
+    const nextNumber = lastPatient?.patientId
+      ? Number(lastPatient.patientId.replace('PAT-', '')) + 1
+      : 1;
+    this.patientId = `PAT-${nextNumber.toString().padStart(4, '0')}`;
+  }
+});
 
 // --- Model ---
 export const Patient = models.Patient || model<IPatient>('Patient', patientSchema);

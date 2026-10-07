@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:doctor": "npx tsx scripts/seedDoctor.ts"
+    "seed:doctor": "npx tsx scripts/seedDoctor.ts",
+    "seed:patients": "tsx scripts/seedPatients.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

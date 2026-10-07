@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { IPatient } from '@/models/Patient';
+import { signOut, useSession } from 'next-auth/react';
 
 interface IDoctor {
   _id: string;
@@ -40,8 +41,17 @@ interface IAiSuggestion {
   medications: IMedication[];
 }
 
+interface ISpecialistRequest {
+  _id: string;
+  requestedSpecialization: string;
+  reason: string;
+  status: string;
+  patient: { _id: string; name: string; patientId?: string; symptoms?: string };
+}
+
 export default function Dashboard() {
   const router = useRouter();
+  const { status } = useSession();
   const [doctor, setDoctor] = useState<IDoctor | null>(null);
   const [patients, setPatients] = useState<IPatient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<IPatient | null>(null);
@@ -51,6 +61,12 @@ export default function Dashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<IAiSuggestion | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [loadingPatients, setLoadingPatients] = useState(true);
+  const [patientsError, setPatientsError] = useState('');
+  const [prescriptionError, setPrescriptionError] = useState('');
+  const [savingPrescription, setSavingPrescription] = useState(false);
+  const [specialistRequests, setSpecialistRequests] = useState<ISpecialistRequest[]>([]);
+  const [requestError, setRequestError] = useState('');
 
   // Prescription form state
   const [condition, setCondition] = useState('');
@@ -63,16 +79,40 @@ export default function Dashboard() {
   const [instructions, setInstructions] = useState('');
 
   useEffect(() => {
-    const storedDoctor = localStorage.getItem('doctor');
-    if (storedDoctor) {
-      const parsedDoctor = JSON.parse(storedDoctor);
-      setDoctor(parsedDoctor);
-      fetch(`/api/patients?doctorId=${parsedDoctor._id}`)
-        .then((res) => res.json())
-        .then((data) => setPatients(data))
-        .catch((err) => console.error('Failed to fetch patients', err));
+    if (status !== 'authenticated') {
+      if (status === 'unauthenticated') {
+        router.replace('/login');
+      }
+      return;
     }
-  }, []);
+
+    const loadDashboard = async () => {
+      setLoadingPatients(true);
+      setPatientsError('');
+      try {
+        const [profileResponse, patientsResponse, requestsResponse] = await Promise.all([
+          fetch('/api/doctors/me'),
+          fetch('/api/patients'),
+          fetch('/api/specialist-requests'),
+        ]);
+        if (!profileResponse.ok || !patientsResponse.ok || !requestsResponse.ok) {
+          throw new Error('Unable to load dashboard data');
+        }
+        const profile = await profileResponse.json();
+        const patientData = await patientsResponse.json();
+        setDoctor(profile);
+        setPatients(Array.isArray(patientData) ? patientData : []);
+        setSpecialistRequests(requestsResponse.ok ? await requestsResponse.json() : []);
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+        setPatientsError('Unable to load patients. Please try again.');
+      } finally {
+        setLoadingPatients(false);
+      }
+    };
+
+    loadDashboard();
+  }, [router, status]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -84,34 +124,79 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('doctor');
-    router.push('/login');
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/login' });
   };
 
   const handlePatientClick = (patient: IPatient) => {
     setSelectedPatient(patient);
   };
 
-  const handlePrescriptionSubmit = () => {
-    const payload = {
-      doctorId: doctor?._id,
-      patientId: selectedPatient?._id,
-      condition,
-      medication,
-      strength,
-      frequency,
-      duration,
-      quantity,
-      meal,
-      instructions,
-    };
-    console.log('Prescription Payload:', payload);
-    alert('Prescription submitted!');
+  const resolveRequest = async (requestId: string, status: 'ACCEPTED' | 'REJECTED') => {
+    setRequestError('');
+    const response = await fetch(`/api/specialist-requests/${requestId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setRequestError(data.message || 'Unable to update request.');
+      return;
+    }
+    setSpecialistRequests((current) => current.filter((request) => request._id !== requestId));
+    const patientsResponse = await fetch('/api/patients');
+    if (patientsResponse.ok) setPatients(await patientsResponse.json());
+  };
+
+  const handlePrescriptionSubmit = async () => {
+    setPrescriptionError('');
+    if (!selectedPatient) {
+      setPrescriptionError('Please select a patient first.');
+      return;
+    }
+    if (!condition.trim() || !medication.trim() || !strength.trim() || !frequency || !duration.trim()) {
+      setPrescriptionError('Please complete the prescription fields before submitting.');
+      return;
+    }
+
+    setSavingPrescription(true);
+    try {
+      const response = await fetch('/api/prescriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: selectedPatient._id,
+          symptoms: condition.split(',').map((symptom) => symptom.trim()).filter(Boolean),
+          diagnosis: condition.trim(),
+          medications: [{
+            name: medication.trim(),
+            dosage: `${strength.trim()}${duration ? ` for ${duration.trim()}` : ''}`,
+            instructions: `${frequency}${quantity ? `, quantity: ${quantity.trim()}` : ''}, ${meal}. ${instructions.trim()}`.trim(),
+          }],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to save prescription.');
+      }
+      setCondition('');
+      setMedication('');
+      setStrength('');
+      setFrequency('');
+      setDuration('');
+      setQuantity('');
+      setInstructions('');
+      alert('Prescription submitted!');
+    } catch (error) {
+      console.error('Prescription submission error:', error);
+      setPrescriptionError(error instanceof Error ? error.message : 'Unable to save prescription.');
+    } finally {
+      setSavingPrescription(false);
+    }
   };
 
   const handleGenerateSuggestion = async () => {
-    console.log("💡 AI Suggestion button clicked");
     setLoadingSuggestion(true);
 
     try {
@@ -129,22 +214,21 @@ export default function Dashboard() {
       });
 
       const data = await res.json();
-      console.log("📦 AI Suggestion response:", data);
-
       if (data.suggestion) {
-  const parsedSuggestion =
-    typeof data.suggestion === 'string'
-      ? JSON.parse(data.suggestion)
-      : data.suggestion;
-
-  setAiSuggestion(parsedSuggestion);
-}
- else {
+        const parsedSuggestion = typeof data.suggestion === 'string'
+          ? JSON.parse(data.suggestion)
+          : data.suggestion;
+        if (parsedSuggestion?.symptoms && parsedSuggestion?.diagnosis && Array.isArray(parsedSuggestion.medications)) {
+          setAiSuggestion(parsedSuggestion);
+        } else {
+          throw new Error('Invalid suggestion response');
+        }
+      } else {
         alert("No AI suggestion received.");
       }
 
     } catch (err) {
-      console.error("❌ Error fetching AI suggestion:", err);
+      console.error("Error fetching AI suggestion:", err);
       alert("Failed to fetch AI suggestion.");
     } finally {
       setLoadingSuggestion(false);
@@ -216,6 +300,22 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main>
+        <section className="mb-5 rounded-xl bg-white p-5 shadow-md">
+          <h2 className="mb-3 text-xl font-bold text-blue-900">Patient Requests</h2>
+          {requestError && <p className="mb-2 text-sm text-red-600">{requestError}</p>}
+          {specialistRequests.length === 0 ? <p className="text-sm text-slate-500">No matching specialist requests.</p> : specialistRequests.map((request) => (
+            <article key={request._id} className="mb-3 rounded border p-3">
+              <p><b>Patient:</b> {request.patient.name}</p>
+              <p><b>Requested:</b> {request.requestedSpecialization}</p>
+              <p><b>Reason:</b> {request.reason}</p>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => router.push(`/dashboard/patients/${request.patient._id}`)} className="rounded border px-3 py-1">View Patient</button>
+                <button onClick={() => resolveRequest(request._id, 'ACCEPTED')} className="rounded bg-green-600 px-3 py-1 text-white">Accept</button>
+                <button onClick={() => resolveRequest(request._id, 'REJECTED')} className="rounded bg-red-600 px-3 py-1 text-white">Reject</button>
+              </div>
+            </article>
+          ))}
+        </section>
         <section className="flex flex-col lg:flex-row gap-5">
           {/* Left Panel: Patient List */}
           <div className="bg-white p-4 rounded-xl shadow-md w-full lg:w-1/6 h-fit max-h-[calc(100vh-160px)] overflow-y-auto">
@@ -228,7 +328,12 @@ export default function Dashboard() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <ul className="list-none p-0 m-0">
-              {patients
+              {loadingPatients && <li className="text-sm text-slate-500 p-2">Loading patients...</li>}
+              {patientsError && <li className="text-sm text-red-600 p-2">{patientsError}</li>}
+              {!loadingPatients && !patientsError && patients.length === 0 && (
+                <li className="text-sm text-slate-500 p-2">No patients found.</li>
+              )}
+              {!loadingPatients && !patientsError && patients
                 .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
                 .map((p) => (
                   <li key={p._id}>
@@ -411,9 +516,10 @@ export default function Dashboard() {
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               <button
                 onClick={handlePrescriptionSubmit}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
+                disabled={savingPrescription}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50"
               >
-                ✅ Send to Patient
+                {savingPrescription ? 'Saving...' : '✅ Send to Patient'}
               </button>
 
               <button
@@ -443,6 +549,9 @@ export default function Dashboard() {
                       ))}
                     </ul>
                   </div>
+                  {prescriptionError && (
+                    <p className="mt-3 text-center text-sm text-red-600">{prescriptionError}</p>
+                  )}
                 </div>
               )}
 

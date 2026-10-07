@@ -1,0 +1,191 @@
+{
+  "planHash": "99dc485e0d5be95842d1b13585614334012b09388b01513fd7d22b3d601fd180",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-10-05T11:23:55.8069798Z",
+  "retryCount": 1,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "typescript-no-emit",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "",
+        "durationMs": 3862
+      },
+      {
+        "name": "lint-passes",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E doctor-dashboard@0.1.0 lint\r\n\u003E next lint\r\n\r\n\u2714 No ESLint warnings or errors\r\n",
+        "durationMs": 4649
+      },
+      {
+        "name": "production-build-passes",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E doctor-dashboard@0.1.0 build\r\n\u003E next build\r\n\r\n   \u25B2 Next.js 15.3.3\r\n   - Environments: .env.local\r\n\r\n   Creating an optimized production build ...\r\n \u2713 Compiled successfully in 1000ms\r\n   Linting and checking validity of types ...\r\n   Collecting page data ...\r\n   Generating static pages (0/16) ...\r\n   Generating static pages (4/16) \r\n   Generating static pages (8/16) \r\n   Generating static pages (12/16) \r\n \u2713 Generating static pages (16/16)\r\n   Finalizing page optimization ...\r\n   Collecting build traces ...\r\n\r\nRoute (app)                                 Size  First Load JS\r\n\u250C \u25CB /                                    5.95 kB         107 kB\r\n\u251C \u25CB /_not-found                            977 B         102 kB\r\n\u251C \u0192 /api/ai-suggest                        160 B         101 kB\r\n\u251C \u0192 /api/auth/[...nextauth]                160 B         101 kB\r\n\u251C \u0192 /api/auth/patient-register             160 B         101 kB\r\n\u251C \u0192 /api/auth/register                     160 B         101 kB\r\n\u251C \u0192 /api/doctors/me                        160 B         101 kB\r\n\u251C \u0192 /api/login                             160 B         101 kB\r\n\u251C \u0192 /api/patients                          160 B         101 kB\r\n\u251C \u0192 /api/patients/[id]                     160 B         101 kB\r\n\u251C \u0192 /api/prescriptions                     160 B         101 kB\r\n\u251C \u0192 /api/prescriptions/[patientId]         160 B         101 kB\r\n\u251C \u0192 /api/test-session                      160 B         101 kB\r\n\u251C \u25CB /dashboard                           9.97 kB         120 kB\r\n\u251C \u0192 /dashboard/patients/[id]             1.96 kB         112 kB\r\n\u251C \u25CB /login                               1.59 kB         112 kB\r\n\u2514 \u25CB /register                            4.72 kB         106 kB\r\n\u002B First Load JS shared by all             101 kB\r\n  \u251C chunks/4bd1b696-d4d5eb693d0a7af9.js  53.2 kB\r\n  \u251C chunks/684-679cfa19604b9f24.js       45.9 kB\r\n  \u2514 other shared chunks (total)          1.99 kB\r\n\r\n\r\n\u0192 Middleware                             60.2 kB\r\n\r\n\u25CB  (Static)   prerendered as static content\r\n\u0192  (Dynamic)  server-rendered on demand\r\n\r\n",
+        "durationMs": 24267
+      },
+      {
+        "name": "login-page-renders",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": false,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 500\nInternal Server Error",
+        "durationMs": 1373
+      },
+      {
+        "name": "registration-page-renders",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": false,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 500\nInternal Server Error\n--- server output ---\n500\r\n",
+        "durationMs": 1054
+      },
+      {
+        "name": "mock-ai-endpoint-responds",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": false,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 500\nInternal Server Error",
+        "durationMs": 762
+      }
+    ],
+    "executions": [
+      {
+        "source": "devServer",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "dev"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "typescript-no-emit",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npx.CMD",
+        "args": [
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "lint-passes",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "production-build-passes",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "login-page-renders",
+        "resolvedExecutable": "C:\\Windows\\system32\\curl.exe",
+        "args": [
+          "-sS",
+          "-o",
+          "NUL",
+          "-w",
+          "%{http_code}",
+          "http://localhost:3000/login"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "registration-page-renders",
+        "resolvedExecutable": "C:\\Windows\\system32\\curl.exe",
+        "args": [
+          "-sS",
+          "-o",
+          "NUL",
+          "-w",
+          "%{http_code}",
+          "http://localhost:3000/register"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "mock-ai-endpoint-responds",
+        "resolvedExecutable": "C:\\Windows\\system32\\curl.exe",
+        "args": [
+          "-sS",
+          "-o",
+          "NUL",
+          "-w",
+          "%{http_code}",
+          "-X",
+          "POST",
+          "-H",
+          "Content-Type: application/json",
+          "--data",
+          "{\u0022patientData\u0022:{\u0022symptoms\u0022:\u0022headache\u0022}}",
+          "http://localhost:3000/api/ai-suggest"
+        ],
+        "cwd": "E:\\NIT ROURKELA\\PROJECTS\\Doctor-Dashboard-new",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}

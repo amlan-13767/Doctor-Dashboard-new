@@ -24,9 +24,7 @@ export default function HealthcareLanding() {
 
   const selectRole = (role:UserRole) => {
     if (role === 'patient') {
-
-      alert('Redirecting to Patient Login Portal...');
-      // router.push('/patient-dashboard');
+      router.push('/patient-login');
 
     } else if (role === 'doctor') {
       // alert('Redirecting to Doctor Portal...');

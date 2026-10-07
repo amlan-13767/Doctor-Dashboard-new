@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-10-05T09:31:29+05:30",
+  "generatedOnPlatform": "win32",
+  "projectType": "webapp",
+  "devServer": {
+    "command": "npm",
+    "args": [
+      "run",
+      "dev"
+    ],
+    "url": "http://localhost:3000",
+    "readyTimeoutSeconds": 120
+  },
+  "setup": [],
+  "assertions": [
+    {
+      "name": "typescript-no-emit",
+      "kind": "process",
+      "command": "npx",
+      "args": [
+        "tsc",
+        "--noEmit"
+      ],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "lint-passes",
+      "kind": "process",
+      "command": "npm",
+      "args": [
+        "run",
+        "lint"
+      ],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "production-build-passes",
+      "kind": "process",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 240
+    },
+    {
+      "name": "login-page-renders",
+      "kind": "http-probe",
+      "startCommand": "curl.exe",
+      "startArgs": [
+        "-sS",
+        "-o",
+        "NUL",
+        "-w",
+        "%{http_code}",
+        "http://localhost:3000/login"
+      ],
+      "url": "http://localhost:3000/login",
+      "verificationMethod": "http-status",
+      "expected": "200",
+      "timeoutSeconds": 30
+    },
+    {
+      "name": "registration-page-renders",
+      "kind": "http-probe",
+      "startCommand": "curl.exe",
+      "startArgs": [
+        "-sS",
+        "-o",
+        "NUL",
+        "-w",
+        "%{http_code}",
+        "http://localhost:3000/register"
+      ],
+      "url": "http://localhost:3000/register",
+      "verificationMethod": "http-status",
+      "expected": "200",
+      "timeoutSeconds": 30
+    },
+    {
+      "name": "mock-ai-endpoint-responds",
+      "kind": "http-probe",
+      "startCommand": "curl.exe",
+      "startArgs": [
+        "-sS",
+        "-o",
+        "NUL",
+        "-w",
+        "%{http_code}",
+        "-X",
+        "POST",
+        "-H",
+        "Content-Type: application/json",
+        "--data",
+        "{\"patientData\":{\"symptoms\":\"headache\"}}",
+        "http://localhost:3000/api/ai-suggest"
+      ],
+      "url": "http://localhost:3000/api/ai-suggest",
+      "verificationMethod": "http-status",
+      "expected": "200",
+      "timeoutSeconds": 30
+    }
+  ]
+}

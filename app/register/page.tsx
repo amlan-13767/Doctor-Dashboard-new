@@ -109,6 +109,11 @@ export default function DoctorRegistration() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
+    }
     if (!formData.phone) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
@@ -150,15 +155,14 @@ export default function DoctorRegistration() {
 
     if (validateForm()) {
       try {
-        const response = await fetch('/api/doctors/register', {
+        const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             ...formData,
-            // Ensure password is included (you should add this to your form)
-            password: formData.password || '', // You should add password field to your form
+            password: formData.password,
           }),
         });
 
@@ -172,7 +176,10 @@ export default function DoctorRegistration() {
 
       } catch (error) {
         console.error('Error submitting form:', error);
-        setErrors({ ...errors, form: error instanceof Error ? error.message : 'An error occurred while submitting the form. Please try again.' });
+        setErrors((currentErrors) => ({
+          ...currentErrors,
+          form: error instanceof Error ? error.message : 'An error occurred while submitting the form. Please try again.'
+        }));
       } finally {
         setIsSubmitting(false);
       }
@@ -200,13 +207,13 @@ export default function DoctorRegistration() {
 
   // Example usage in your React component
   const checkEmailAvailability = async (email: string) => {
-    const response = await fetch(`/api/doctors/register?email=${encodeURIComponent(email)}`);
+    const response = await fetch(`/api/auth/register?email=${encodeURIComponent(email)}`);
     const data = await response.json();
     return !data.exists; // returns true if available
   };
 
   const checkPhoneAvailability = async (phone: string) => {
-    const response = await fetch(`/api/doctors/register?phone=${encodeURIComponent(phone)}`);
+    const response = await fetch(`/api/auth/register?phone=${encodeURIComponent(phone)}`);
     const data = await response.json();
     return !data.exists; // returns true if available
   };
@@ -216,20 +223,20 @@ export default function DoctorRegistration() {
     <div className="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center p-8">
       <button
         onClick={goBack}
-        className="absolute top-8 left-8 bg-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md  transition-all hover:-translate-x-1 hover:bg-violet-600 hover:scale-105  focus:outline-2 focus:outline-offset-2 focus:outline-violet-500 active:bg-violet-700"
+        className="absolute top-8 left-8 z-20 bg-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md  transition-all hover:-translate-x-1 hover:bg-violet-600 hover:scale-105  focus:outline-2 focus:outline-offset-2 focus:outline-violet-500 active:bg-violet-700"
       >
         ← Back to Home
       </button>
       <button
         onClick={() => { router.push('/login') }}
-        className="absolute top-20 left-8 bg-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md  transition-all hover:-translate-x-1 hover:bg-violet-600 hover:scale-105  focus:outline-2 focus:outline-offset-2 focus:outline-violet-500 active:bg-violet-700"
+        className="absolute top-20 left-8 z-20 bg-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md  transition-all hover:-translate-x-1 hover:bg-violet-600 hover:scale-105  focus:outline-2 focus:outline-offset-2 focus:outline-violet-500 active:bg-violet-700"
       >
         ← Back to Login
       </button>
 
       <div className="w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 animate-[slideIn_0.8s_ease]">
         <div className="relative bg-gradient-to-br from-blue-500 to-blue-700 text-white p-8 text-center overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full bg-radial-gradient opacity-50 animate-pulse"></div>
+          <div className="pointer-events-none absolute top-0 left-0 w-full h-full bg-radial-gradient opacity-50 animate-pulse"></div>
           <div className="relative z-10 ">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">👨‍⚕️ Doctor Registration</h1>
             <p className="text-lg opacity-90">Join our network of healthcare professionals</p>
@@ -316,6 +323,23 @@ export default function DoctorRegistration() {
                   required
                 />
                 {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password || ''}
+                  onChange={handleChange}
+                  minLength={6}
+                  className={`w-full p-3 border-2 rounded-lg transition-all ${errors.password ? 'border-red-500' : 'border-gray-200'} focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200`}
+                  required
+                />
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
               </div>
 
               <div>

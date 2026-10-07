@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 const DoctorLoginForm: React.FC = () => {
   const router = useRouter();
@@ -9,30 +10,30 @@ const DoctorLoginForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+        callbackUrl: '/dashboard',
+      });
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      console.log('✅ Login successful', data.doctor);
-
-      // Save doctor profile to localStorage
-      localStorage.setItem('doctor', JSON.stringify(data.doctor));
-
-      router.push('/dashboard');
-    } else {
-      console.error('❌ Login failed:', data.error);
-      setError(data.error || 'Invalid credentials');
+      if (result?.ok) {
+        router.push('/dashboard');
+      } else {
+        setError('Invalid credentials');
+      }
+    } catch (loginError) {
+      console.error('Login error:', loginError);
+      setError('Unable to sign in. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -119,9 +120,10 @@ const DoctorLoginForm: React.FC = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold hover:from-blue-600 hover:to-blue-800 shadow-md transition-all"
+            disabled={isSubmitting}
+            className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold hover:from-blue-600 hover:to-blue-800 shadow-md transition-all disabled:opacity-50"
           >
-            🚀 Sign In to Dashboard
+            {isSubmitting ? 'Signing in...' : '🚀 Sign In to Dashboard'}
           </button>
 
           {/* Create Account Link */}
